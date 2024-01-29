@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 // final formatter = DateFormat.yMd(); // using it from the expense.dart file
 
 class NewExpense extends StatefulWidget {
-  const NewExpense({super.key});
+  const NewExpense({super.key, required this.onAddExpense});
+
+  final void Function(Expense expense) onAddExpense;
 
   @override
   State<NewExpense> createState() {
@@ -36,21 +38,33 @@ class _NewExpenseState extends State<NewExpense> {
   void _submitExpenseData() {
     final enteredAmount = double.tryParse(_amountController.text);
     final amountIsInvalid = enteredAmount == null || enteredAmount <= 0;
-    if (_titleController.text.trim().isEmpty || amountIsInvalid || _selectedDate == null) {
-      showDialog(context: context, builder: (ctx) => AlertDialog(
-        title: const Text('Invalid input'),
-        content: const Text('Please make sure valid data was entered.'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-            }, 
-            child: const Text('Ok')
-          )
-        ]
-      ));
+    if (_titleController.text.trim().isEmpty ||
+        amountIsInvalid ||
+        _selectedDate == null) {
+      showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+                  title: const Text('Invalid input'),
+                  content:
+                      const Text('Please make sure valid data was entered.'),
+                  actions: [
+                    TextButton(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                        },
+                        child: const Text('Ok'))
+                  ]));
       return;
     }
+
+    widget.onAddExpense(
+      Expense(
+        title: _titleController.text,
+        amount: enteredAmount,
+        date: _selectedDate!,
+        category: _selectedCategory,
+      ),
+    );
   }
 
   @override
@@ -92,7 +106,9 @@ class _NewExpenseState extends State<NewExpense> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     // the bang symbol (!) lets Dart know that _selectedDate will not be null.
-                    Text(_selectedDate == null ? 'No date selected' : formatter.format(_selectedDate!)),
+                    Text(_selectedDate == null
+                        ? 'No date selected'
+                        : formatter.format(_selectedDate!)),
                     IconButton(
                       onPressed: _presentDatePicker,
                       icon: const Icon(Icons.calendar_month),
@@ -106,22 +122,21 @@ class _NewExpenseState extends State<NewExpense> {
           Row(
             children: [
               DropdownButton(
-                value: _selectedCategory,
-                items: Category.values.map(
-                  (category) => DropdownMenuItem(
-                    value: category,
-                    child: Text(category.name.toUpperCase()))
-                ).toList(), 
-                onChanged: (value) {
-                  if (value == null) {
-                    return;
-                  }
-                  // print(value);
-                  setState(() {
-                    _selectedCategory = value;
-                  });
-                }
-              ),
+                  value: _selectedCategory,
+                  items: Category.values
+                      .map((category) => DropdownMenuItem(
+                          value: category,
+                          child: Text(category.name.toUpperCase())))
+                      .toList(),
+                  onChanged: (value) {
+                    if (value == null) {
+                      return;
+                    }
+                    // print(value);
+                    setState(() {
+                      _selectedCategory = value;
+                    });
+                  }),
               const Spacer(),
               TextButton(
                   onPressed: () {
